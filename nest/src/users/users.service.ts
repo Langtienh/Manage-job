@@ -1,6 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { genSalt, hash } from 'bcryptjs';
+import { compareSync, genSalt, hash } from 'bcryptjs';
 import mongoose, { Model } from 'mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -15,8 +19,13 @@ export class UsersService {
     return await hash(password, salt);
   }
 
+  checkPassword(password: string, hash: string) {
+    return compareSync(password, hash);
+  }
+
   private checkId(id: string) {
-    return mongoose.Types.ObjectId.isValid(id);
+    if (!mongoose.Types.ObjectId.isValid(id))
+      throw new BadRequestException('Invalid ID');
   }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -25,25 +34,35 @@ export class UsersService {
     return user;
   }
 
-  findAll() {
-    return this.userModel.find().exec();
+  findAll(): Promise<User[]> {
+    return this.userModel.find();
   }
 
-  findOne(id: string) {
-    if (!this.checkId(id)) {
-      return { message: 'Invalid ID' };
+  async findById(id: string): Promise<User> {
+    this.checkId(id);
+    const user = await this.userModel.findById(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
-    return this.userModel.findById(id).exec();
+    return user;
+  }
+
+  async findByEmail(email: string): Promise<User | undefined> {
+    const user = await this.userModel.findOne({ email }).lean().exec();
+    if (user) return user;
+  }
+
+  async findByUsername(username: string): Promise<User | undefined> {
+    const user = await this.userModel.findOne({ username });
+    if (user) return user;
   }
 
   update(id: string, updateUserDto: UpdateUserDto) {
-    return this.userModel.findByIdAndDelete(id, updateUserDto).exec();
+    return this.userModel.findByIdAndDelete(id, updateUserDto);
   }
 
   remove(id: string) {
-    if (!this.checkId(id)) {
-      return { message: 'Invalid ID' };
-    }
-    return this.userModel.findByIdAndDelete(id).exec();
+    this.checkId(id);
+    return this.userModel.findByIdAndDelete(id);
   }
 }
