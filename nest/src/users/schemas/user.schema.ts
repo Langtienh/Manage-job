@@ -4,11 +4,8 @@ import { USER_ROLE, USER_STATUS } from '../dto/enum';
 
 export type UserDocument = HydratedDocument<User>;
 
-@Schema()
+@Schema({ timestamps: true })
 export class User {
-  @Prop()
-  _id: string;
-
   @Prop({ required: true })
   name: string;
 
@@ -42,11 +39,17 @@ export class User {
   @Prop({ default: USER_STATUS.UNVERIFIED })
   status: USER_STATUS;
 
-  @Prop({ default: Date.now })
+  @Prop()
   createdAt: Date;
 
-  @Prop({ default: Date.now })
+  @Prop()
   updatedAt: Date;
+
+  @Prop()
+  deletedAt: Date;
+
+  @Prop()
+  isDeleted: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

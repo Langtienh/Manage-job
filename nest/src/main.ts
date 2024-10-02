@@ -15,6 +15,12 @@ async function bootstrap() {
   const reflector = app.get(Reflector);
   app.useGlobalGuards(new JwtAuthGuard(reflector));
 
+  // enable cors
+  // origin: Fe domain, example: 'http://localhost:3000',
+  // origin: '*',
+  // methods: 'GET,HEAD,PUT,PATCH,POST,DELETE'
+  app.enableCors();
+
   const PORT = configService.get<number>('PORT');
   await app.listen(PORT);
 }

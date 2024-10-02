@@ -8,11 +8,14 @@ import { compareSync, genSalt, hash } from 'bcryptjs';
 import mongoose, { Model } from 'mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './schemas/user.schema';
+import { User, UserDocument } from './schemas/user.schema';
+import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: SoftDeleteModel<UserDocument>
+  ) {}
 
   private async hashPassword(password: string): Promise<string> {
     const salt = await genSalt(10);
@@ -58,11 +61,11 @@ export class UsersService {
   }
 
   update(id: string, updateUserDto: UpdateUserDto) {
-    return this.userModel.findByIdAndDelete(id, updateUserDto);
+    return this.userModel.findByIdAndUpdate(id, updateUserDto);
   }
 
   remove(id: string) {
     this.checkId(id);
-    return this.userModel.findByIdAndDelete(id);
+    return this.userModel.softDelete({ _id: id });
   }
 }
